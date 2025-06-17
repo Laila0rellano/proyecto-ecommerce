@@ -3,24 +3,33 @@ const Product = require('../models/Product');
 // Crear producto (solo admin)
 exports.crearProducto = async (req, res) => {
   try {
-    const { nombre, descripcion, precio, stock, imagen } = req.body;
+    const { nombre, descripcion, precio, stock, imagen, categoria } = req.body;
 
     // Validar campos obligatorios
     if (!nombre || precio == null || stock == null) {
       return res.status(400).json({ message: 'Nombre, precio y stock son obligatorios.' });
     }
 
-    // Validar tipos básicos
+    // Validar tipos
     if (typeof nombre !== 'string' || typeof precio !== 'number' || typeof stock !== 'number') {
       return res.status(400).json({ message: 'Datos inválidos para nombre, precio o stock.' });
     }
 
-    // Validar valores positivos o cero
+    // Validar valores positivos
     if (precio < 0 || stock < 0) {
-      return res.status(400).json({ message: 'Precio y stock deben ser números positivos o cero.' });
+      return res.status(400).json({ message: 'Precio y stock deben ser positivos o cero.' });
     }
 
-    const nuevoProducto = new Product({ nombre, descripcion, precio, stock, imagen });
+    // Crear producto con la imagen enviada (sea externa o interna)
+    const nuevoProducto = new Product({
+      nombre,
+      descripcion,
+      precio,
+      stock,
+      imagen,
+      categoria
+    });
+
     await nuevoProducto.save();
 
     res.status(201).json(nuevoProducto);

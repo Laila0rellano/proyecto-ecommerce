@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+:root {
+  --color-primario: #3230c2;
+  --color-secundario: #12ccb0;
+  --color-texto-oscuro: #1c1c1e;
+  --color-fondo-claro: #f4f3fb;
+  --color-acento: #f294cd;
+  --color-amarillo: #e1b423;
+  --color-lavanda-suave: #eec0e4;
+  --color-apoyo: #5856de;
+  --color-rosa-oscuro: #cd429f;
+  --color-blanco: #ffffff;
+}
+
+.layoutContent {
+ font-family: "Inter", sans-serif;
+  padding-top: 5px; /* espacio para navbar sticky */
+  min-height: 100vh;
+  background-color: var(--color-fondo-claro);
+}
+
+.home {
+  padding: 60px 0;
+  text-align: center;
+  min-height: 100vh;
+}
+
+.card {
+  color: var(--color-texto-oscuro);
+  border: 1px solid var(--color-primario);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.card:hover {
+  transform: scale(1.02);
+  background-color: var(--color-apoyo);
+  color: var(--color-blanco);
+}
+
+.botonPrimario {
+  background-color: var(--color-primario);
+  color: var(--color-blanco);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.botonPrimario:hover {
+  background-color: var(--color-secundario);
+}
+
+.botonSecundario {
+  background-color: var(--color-lavanda-suave);
+  color: var(--color-fondo-claro);
+  border: none;
+  padding: 0.5rem 1rem;
+  transition: background-color 0.3s;
+}
+
+.botonSecundario:hover {
+  background-color: var(--color-acento);
+  color: var(--color-fondo-claro);
+}
+
+.botonAdvertencia {
+  background-color: var(--color-amarillo);
+  color: var(--color-fondo-claro);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  margin-right: 2px;
+  transition: background-color 0.3s;
+}
+
+.botonAdvertencia:hover {
+  background-color: #ffd344;
+}
+
+.botonDanger {
+  background-color: var(--color-acento);
+  color: var(--color-fondo-claro);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  margin-right: 2px;
+  transition: background-color 0.3s;
+}
+
+.botonDanger:hover {
+  background-color: var(--color-rosa-oscuro);
+}
+
+.navbar {
+  background-color: var(--color-primario) !important;
+}
+
+.footer {
+  background-color: var(--color-texto-oscuro);
+  color: var(--color-blanco);
+  padding: 20px 0;
+  text-align: center;
+}
+
+.authContainers {
+  max-width: 500px;
+  margin-top: 3rem;
+}

@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 
+
 // Crear pedido
 exports.crearPedido = async (req, res) => {
   try {
@@ -8,7 +9,8 @@ exports.crearPedido = async (req, res) => {
     if (!productos || !Array.isArray(productos) || productos.length === 0) {
       return res.status(400).json({ message: 'El pedido debe tener al menos un producto.' });
     }
-
+    
+console.log("Usuario autenticado en crearPedido:", req.usuario);
     let total = 0;
 
     // Verificar stock y calcular total
@@ -101,5 +103,38 @@ exports.cambiarEstado = async (req, res) => {
     res.json(pedido);
   } catch (error) {
     res.status(500).json({ message: 'Error al cambiar el estado del pedido.', error: error.message });
+  }
+};
+
+// Eliminar pedido (solo si es del usuario y está pendiente)
+exports.eliminarPedido = async (req, res) => {
+  try {
+    const pedido = await Order.findById(req.params.id);
+    if (!pedido) {
+      return res.status(404).json({ message: 'Pedido no encontrado.' });
+    }
+
+    // Validar que el pedido pertenezca al usuario autenticado
+    if (pedido.usuario.toString() !== req.usuario._id.toString()) {
+      return res.status(403).json({ message: 'No tienes permiso para eliminar este pedido.' });
+    }
+
+    // Solo permitir si el pedido está en estado pendiente
+    if (pedido.estado !== 'pendiente') {
+      return res.status(400).json({ message: 'Solo se pueden eliminar pedidos pendientes.' });
+    }
+
+    // Devolver el stock
+    for (const item of pedido.productos) {
+      await Product.findByIdAndUpdate(item.producto, {
+        $inc: { stock: item.cantidad },
+      });
+    }
+
+    await pedido.deleteOne();
+
+    res.json({ message: 'Pedido eliminado correctamente.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al eliminar el pedido.', error: error.message });
   }
 };

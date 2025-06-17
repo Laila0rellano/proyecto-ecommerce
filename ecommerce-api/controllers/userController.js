@@ -54,7 +54,16 @@ exports.login = async (req, res) => {
     }
 
     const token = generarToken(usuario);
-    res.json({ token });
+    res.json({
+      token,  
+      user: { // Agrego esto porque posteriormente tengo que usarlo en el front-end
+      nombre: usuario.nombre,
+      email: usuario.email,
+      rol: usuario.rol,
+      _id: usuario._id,
+  }
+});
+
   } catch (err) {
     res.status(500).json({ message: 'Error al iniciar sesión', error: err.message });
   }

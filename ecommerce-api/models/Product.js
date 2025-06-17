@@ -13,7 +13,7 @@ const productSchema = new mongoose.Schema({
   descripcion: { type: String, trim: true },
   precio: { type: Number, required: true, min: 0 },
   stock: { type: Number, required: true, min: 0 },
-  imagen: { type: String }, // URL o nombre del archivo
+  imagen: { type: String }, // ahí va la URL o nombre del archivo
 }, { timestamps: true });
 
 productSchema.index({ nombre: 1 }, { unique: true });

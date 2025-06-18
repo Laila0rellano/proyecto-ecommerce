@@ -8,14 +8,12 @@ const jwt = require('jsonwebtoken');
 let adminToken;
 let userToken;
 
-// Conectar a la base de datos en memoria UNA VEZ al inicio de todos los tests
 beforeAll(async () => {
   await connect();
 });
 
-// Se ejecuta ANTES de CADA test individual en este archivo
 beforeEach(async () => {
-  await clearDatabase(); 
+  await clearDatabase();
 
   const admin = await User.create({
     nombre: 'Veronica',
@@ -92,7 +90,7 @@ describe('Gestión de Productos CRUD - crear ver actualizar y borrar', () => {
         stock: 5
       });
     expect(res.statusCode).toBe(403); // Forbidden
-    expect(res.body).toHaveProperty('message', 'Acceso denegado. Rol no autorizado.');
+    expect(res.body).toHaveProperty('message', 'Acceso denegado. No tienes permisos suficientes.');
   });
 
   it('debería fallar si faltan campos obligatorios al crear producto', async () => {
@@ -106,7 +104,7 @@ describe('Gestión de Productos CRUD - crear ver actualizar y borrar', () => {
       });
 
     expect(res.statusCode).toBe(400); // Bad Request por validación
-    expect(res.body).toHaveProperty('message', 'Faltan Campos Obligatorios'); 
+    expect(res.body).toHaveProperty('message', 'Nombre, precio y stock son obligatorios.');
   });
 
   // Tests de Leer
@@ -144,7 +142,7 @@ describe('Gestión de Productos CRUD - crear ver actualizar y borrar', () => {
     const res = await request(app).get(`/api/productos/${nonExistentId}`);
 
     expect(res.statusCode).toBe(404);
-    expect(res.body).toHaveProperty('message', 'Producto no encontrado');
+    expect(res.body).toHaveProperty('message', 'Producto no encontrado.');
   });
 
 
@@ -163,7 +161,7 @@ describe('Gestión de Productos CRUD - crear ver actualizar y borrar', () => {
       .send({
         nombre: 'Producto Actualizado',
         precio: 60,
-        stock: 7 
+        stock: 7
       });
 
     expect(res.statusCode).toBe(200);
@@ -186,7 +184,7 @@ describe('Gestión de Productos CRUD - crear ver actualizar y borrar', () => {
       .send({ nombre: 'Intento de update' });
 
     expect(res.statusCode).toBe(403); // Forbidden
-    expect(res.body).toHaveProperty('message', 'Acceso denegado. Rol no autorizado.');
+    expect(res.body).toHaveProperty('message', 'Acceso denegado. No tienes permisos suficientes.');
   });
 
   // Tests de Eliminación
@@ -202,7 +200,7 @@ describe('Gestión de Productos CRUD - crear ver actualizar y borrar', () => {
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('message', 'Producto eliminado con éxito.');
+    expect(res.body).toHaveProperty('message', 'Producto eliminado correctamente.');
 
     // Verificar que el producto ya no existe en la base de datos por si las dudas
     const deletedProduct = await Product.findById(productToDelete._id);
@@ -221,6 +219,6 @@ describe('Gestión de Productos CRUD - crear ver actualizar y borrar', () => {
       .set('Authorization', `Bearer ${userToken}`); // Intento con token de cliente
 
     expect(res.statusCode).toBe(403); // Forbidden
-    expect(res.body).toHaveProperty('message', 'Acceso denegado. Rol no autorizado.');
+    expect(res.body).toHaveProperty('message', 'Acceso denegado. No tienes permisos suficientes.');
   });
 });

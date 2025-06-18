@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User'); // Asegurate que el path sea correcto
+const User = require('../models/User');
 
 require('dotenv').config();
 
@@ -21,7 +21,7 @@ const verificarToken = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secreto');
 
-    // 🔥 Esta línea es fundamental
+    // Esta línea es fundamental, evito exponer la contraseña cuando se devuelva
     req.usuario = await User.findById(decoded._id).select('-password');
 
     if (!req.usuario) {

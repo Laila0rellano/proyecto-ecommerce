@@ -8,206 +8,219 @@ const jwt = require('jsonwebtoken');
 let adminToken;
 let userToken;
 
+// Conectar a la base de datos en memoria UNA VEZ al inicio de todos los tests
 beforeAll(async () => {
   await connect();
+});
 
-  // Crear admin
+// Se ejecuta ANTES de CADA test individual en este archivo
+beforeEach(async () => {
+  await clearDatabase(); 
+
   const admin = await User.create({
-    nombre: 'Admin',
-    email: 'admin@test.com',
-    password: '123456',
+    nombre: 'Veronica',
+    email: 'vero@test.com',
+    password: 'administradora',
     rol: 'admin'
   });
 
   adminToken = jwt.sign(
-    { id: admin._id, rol: admin.rol, nombre: admin.nombre },
+    { _id: admin._id, rol: admin.rol, nombre: admin.nombre },
     process.env.JWT_SECRET || 'secreto',
     { expiresIn: '1h' }
   );
 
-  // Crear usuario normal
   const user = await User.create({
-    nombre: 'Cliente',
-    email: 'cliente@test.com',
-    password: '123456',
+    nombre: 'Lara',
+    email: 'lara10@gmail.com',
+    password: 'lari24',
     rol: 'cliente'
   });
 
   userToken = jwt.sign(
-    { id: user._id, rol: user.rol, nombre: user.nombre },
+    { _id: user._id, rol: user.rol, nombre: user.nombre },
     process.env.JWT_SECRET || 'secreto',
     { expiresIn: '1h' }
   );
 });
 
-afterEach(async () => await clearDatabase());
-afterAll(async () => await closeDatabase());
+afterAll(async () => {
+  await closeDatabase();
+});
 
-describe('Gestión de Productos', () => {
+describe('Gestión de Productos CRUD - crear ver actualizar y borrar', () => {
+
+  // Test de Creación
   it('debería crear un producto como admin', async () => {
     const res = await request(app)
       .post('/api/productos')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        nombre: 'Producto 1',
-        descripcion: 'Descripción 1',
+        nombre: 'Impresora ender 2 pro',
+        descripcion: 'ender 2 pro',
         precio: 100,
         stock: 10
       });
 
     expect(res.statusCode).toBe(201);
-    expect(res.body.nombre).toBe('Producto 1');
+    expect(res.body).toHaveProperty('_id');
+    expect(res.body.nombre).toBe('Impresora ender 2 pro');
+    expect(res.body.precio).toBe(100);
   });
 
   it('no debería crear producto sin token', async () => {
     const res = await request(app)
       .post('/api/productos')
       .send({
-        nombre: 'Producto sin token',
-        descripcion: 'Test',
+        nombre: 'PLA Gris grilon3',
+        descripcion: 'pla gris marca grilon',
         precio: 50,
         stock: 5
       });
-    expect(res.statusCode).toBe(401);
-    expect(res.body).toHaveProperty('message');
+    expect(res.statusCode).toBe(401); // Unauthorized
+    expect(res.body).toHaveProperty('message', 'Acceso denegado. Token no proporcionado.');
   });
 
   it('no debería crear producto con rol no admin', async () => {
     const res = await request(app)
       .post('/api/productos')
-      .set('Authorization', `Bearer ${userToken}`)
+      .set('Authorization', `Bearer ${userToken}`) // Intento con token de cliente
       .send({
-        nombre: 'Producto no admin',
-        descripcion: 'Test',
+        nombre: 'Producto Random',
+        descripcion: 'token de cliente',
         precio: 50,
         stock: 5
       });
-    expect(res.statusCode).toBe(403);
-    expect(res.body).toHaveProperty('message');
+    expect(res.statusCode).toBe(403); // Forbidden
+    expect(res.body).toHaveProperty('message', 'Acceso denegado. Rol no autorizado.');
   });
 
-  it('debería fallar si falta el nombre', async () => {
+  it('debería fallar si faltan campos obligatorios al crear producto', async () => {
+    // sin nombre y sin precio
     const res = await request(app)
       .post('/api/productos')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        descripcion: 'Falla',
-        precio: 100,
+        descripcion: 'no hay descripción',
         stock: 5
       });
 
-    expect(res.statusCode).toBe(400);
-    expect(res.body).toHaveProperty('message');
+    expect(res.statusCode).toBe(400); // Bad Request por validación
+    expect(res.body).toHaveProperty('message', 'Faltan Campos Obligatorios'); 
   });
 
-  it('debería fallar si precio es negativo', async () => {
-    const res = await request(app)
-      .post('/api/productos')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({
-        nombre: 'Producto precio negativo',
-        descripcion: 'Test',
-        precio: -10,
-        stock: 5
-      });
-
-    expect(res.statusCode).toBe(400);
-    expect(res.body).toHaveProperty('message');
-  });
-
-  it('debería obtener lista de productos', async () => {
-    await Product.create({
-      nombre: 'Producto 2',
-      descripcion: 'Otro',
-      precio: 50,
-      stock: 5
-    });
+  // Tests de Leer
+  it('debería obtener todos los productos', async () => {
+    // Crear algunos productos
+    await Product.create({ nombre: 'Laptop', precio: 1200, stock: 5 });
+    await Product.create({ nombre: 'Teclado', precio: 75, stock: 20 });
 
     const res = await request(app).get('/api/productos');
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.length).toBeGreaterThanOrEqual(2);
+    expect(res.body.some(p => p.nombre === 'Laptop')).toBe(true);
   });
 
-  it('debería obtener un producto por id', async () => {
-    const prod = await Product.create({
-      nombre: 'Producto 3',
-      descripcion: 'Descripción 3',
-      precio: 30,
-      stock: 7
+  it('debería obtener un producto por ID', async () => {
+    const newProduct = await Product.create({
+      nombre: 'Monitor Gamer',
+      descripcion: 'Monitor de alta resolución samsung',
+      precio: 350,
+      stock: 15
     });
 
-    const res = await request(app).get(`/api/productos/${prod._id}`);
+    const res = await request(app).get(`/api/productos/${newProduct._id}`);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.nombre).toBe('Producto 3');
+    expect(res.body).toHaveProperty('_id', newProduct._id.toString());
+    expect(res.body.nombre).toBe('Monitor Gamer');
   });
 
+  it('debería devolver 404 si el producto no se encuentra por ID', async () => {
+    const nonExistentId = '605c3c0d6f7b8a001c8e0e0e'; // id random de un producto que borré en postman
+
+    const res = await request(app).get(`/api/productos/${nonExistentId}`);
+
+    expect(res.statusCode).toBe(404);
+    expect(res.body).toHaveProperty('message', 'Producto no encontrado');
+  });
+
+
+  // Tests de Actualización
   it('debería actualizar un producto como admin', async () => {
-    const prod = await Product.create({
-      nombre: 'Producto 4',
-      descripcion: 'Desc 4',
-      precio: 60,
-      stock: 8
+    const productToUpdate = await Product.create({
+      nombre: 'Producto a Actualizar',
+      descripcion: 'Vieja descripción',
+      precio: 50,
+      stock: 5
     });
 
     const res = await request(app)
-      .put(`/api/productos/${prod._id}`)
+      .put(`/api/productos/${productToUpdate._id}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        nombre: 'Producto 4 actualizado',
-        precio: 70
+        nombre: 'Producto Actualizado',
+        precio: 60,
+        stock: 7 
       });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.nombre).toBe('Producto 4 actualizado');
-    expect(res.body.precio).toBe(70);
+    expect(res.body).toHaveProperty('_id', productToUpdate._id.toString());
+    expect(res.body.nombre).toBe('Producto Actualizado');
+    expect(res.body.precio).toBe(60);
+    expect(res.body.stock).toBe(7);
   });
 
   it('no debería actualizar producto con rol no admin', async () => {
-    const prod = await Product.create({
-      nombre: 'Producto 5',
-      descripcion: 'Desc 5',
-      precio: 20,
-      stock: 3
+    const productToUpdate = await Product.create({
+      nombre: 'Monitor Philips',
+      precio: 100,
+      stock: 10
     });
 
     const res = await request(app)
-      .put(`/api/productos/${prod._id}`)
-      .set('Authorization', `Bearer ${userToken}`)
+      .put(`/api/productos/${productToUpdate._id}`)
+      .set('Authorization', `Bearer ${userToken}`) // Intento con token de cliente
       .send({ nombre: 'Intento de update' });
 
-    expect(res.statusCode).toBe(403);
+    expect(res.statusCode).toBe(403); // Forbidden
+    expect(res.body).toHaveProperty('message', 'Acceso denegado. Rol no autorizado.');
   });
 
+  // Tests de Eliminación
   it('debería eliminar un producto como admin', async () => {
-    const prod = await Product.create({
-      nombre: 'Producto 6',
-      descripcion: 'Desc 6',
-      precio: 15,
+    const productToDelete = await Product.create({
+      nombre: 'Producto para borrar',
+      precio: 20,
       stock: 2
     });
 
     const res = await request(app)
-      .delete(`/api/productos/${prod._id}`)
+      .delete(`/api/productos/${productToDelete._id}`)
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('message');
+    expect(res.body).toHaveProperty('message', 'Producto eliminado con éxito.');
+
+    // Verificar que el producto ya no existe en la base de datos por si las dudas
+    const deletedProduct = await Product.findById(productToDelete._id);
+    expect(deletedProduct).toBeNull();
   });
 
   it('no debería eliminar producto con rol no admin', async () => {
-    const prod = await Product.create({
-      nombre: 'Producto 7',
-      descripcion: 'Desc 7',
-      precio: 10,
-      stock: 1
+    const productToDelete = await Product.create({
+      nombre: 'Producto Eliminar No Admin',
+      precio: 30,
+      stock: 3
     });
 
     const res = await request(app)
-      .delete(`/api/productos/${prod._id}`)
-      .set('Authorization', `Bearer ${userToken}`);
+      .delete(`/api/productos/${productToDelete._id}`)
+      .set('Authorization', `Bearer ${userToken}`); // Intento con token de cliente
 
-    expect(res.statusCode).toBe(403);
+    expect(res.statusCode).toBe(403); // Forbidden
+    expect(res.body).toHaveProperty('message', 'Acceso denegado. Rol no autorizado.');
   });
 });

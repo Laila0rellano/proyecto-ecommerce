@@ -1,4 +1,5 @@
-API de E-commerce P2 y PW2
+✮ ⋆ ˚｡𖦹 ⋆｡°✩ API de E-commerce P2 y PW2 ✮ ⋆ ˚｡𖦹 ⋆｡°✩
+
 Es un proyecto de API para un sistema de e-commerce básico, construido con Node.js, Express y MongoDB. Permite gestionar usuarios (clientes y administradores), productos y pedidos, incluyendo autenticación JWT y roles de usuario.
 
 🖤​ Características Principales
